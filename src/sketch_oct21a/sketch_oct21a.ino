@@ -4,7 +4,7 @@
 #include "GyverButton.h"
 
 #define LED_COUNT 27          // число светодиодов в кольце/ленте
-#define LED_DT 5             // пин, куда подключен DIN ленты
+#define LED_DT 6             // пин, куда подключен DIN ленты
 int max_bright = 51;         // максимальная яркость по умолчанию (0 - 255)
 int bright_Memory = 2;      // Яйчека памяти яркости
 
@@ -31,7 +31,7 @@ int lcount = 0;              //-ANOTHER COUNTING VAR
 
 
 #define BTN1_PIN 10 
-#define BTN2_PIN 4// кнопка подключена сюда (BTN_PIN --- КНОПКА --- GND)
+#define BTN2_PIN 12// кнопка подключена сюда (BTN_PIN --- КНОПКА --- GND)
 GButton butt1(BTN1_PIN, HIGH_PULL, NORM_OPEN);  //Кнопка 1
 GButton butt2(BTN2_PIN);  //Кнопка 2
 
