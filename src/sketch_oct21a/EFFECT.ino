@@ -160,20 +160,26 @@ void flicker() {                          //-m9-FLICKER EFFECT
   }
 }
 
-void pulse_one_color_all() {              //-m10-PULSE BRIGHTNESS ON ALL LEDS TO ONE COLOR
-  if (bouncedirection == 0) {
+void pulse_one_color_all() //-m10-PULSE BRIGHTNESS ON ALL LEDS TO ONE COLOR
+{              
+  if (bouncedirection == 0) 
+  {
     ibright++;
-    if (ibright >= 255) {
+    if (ibright >= 255) 
+    {
       bouncedirection = 1;
     }
   }
-  if (bouncedirection == 1) {
+  if (bouncedirection == 1) 
+  {
     ibright = ibright - 1;
-    if (ibright <= 1) {
+    if (ibright <= 100) 
+    {
       bouncedirection = 0;
     }
   }
-  for (int idex = 0 ; idex < LED_COUNT; idex++ ) {
+  for (int idex = 0 ; idex < LED_COUNT; idex++ ) 
+  {
     leds[idex] = CHSV(thishue, thissat, ibright);
   }
   LEDS.show();

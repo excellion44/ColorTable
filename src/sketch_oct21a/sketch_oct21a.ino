@@ -137,31 +137,31 @@ void change_mode(int newmode) {
     case 2: thisdelay = 20; break;                      //---STRIP RAINBOW FADE
     case 3: thisdelay = 20; thisstep = 10; break;       //---RAINBOW LOOP
     case 4: thisdelay = 20; break;                      //---RANDOM BURST
-    case 5: thisdelay = 20; thishue = 0; break;         //---CYLON v1
-    case 6: thisdelay = 40; thishue = 0; break;         //---CYLON v2
-    case 7: thisdelay = 40; thishue = 0; break;         //---POLICE LIGHTS SINGLE
-    case 8: thisdelay = 40; thishue = 0; break;         //---POLICE LIGHTS SOLID
+    case 5: thisdelay = 20; thishue; break;         //---CYLON v1                                    ОСТАВЛЯЕМ  вертикальные
+    case 6: thisdelay = 40; thishue; break;         //---CYLON v2                                    ОСТАВЛЯЕМ  вертикальные 
+    case 7: thisdelay = 40; thishue; break;         //---POLICE LIGHTS SINGLE
+    case 8: thisdelay = 40; thishue; break;         //---POLICE LIGHTS SOLID
     case 9: thishue = 160; thissat = 50; break;         //---STRIP FLICKER
-    case 10: thisdelay = 15; thishue = 0; break;        //---PULSE COLOR BRIGHTNESS
-    case 11: thisdelay = 15; thishue = 0; break;        //---PULSE COLOR SATURATION
-    case 12: thisdelay = 60; thishue = 180; break;      //---VERTICAL SOMETHING
-    case 13: thisdelay = 100; break;                    //---CELL AUTO - RULE 30 (RED)
-    case 14: thisdelay = 40; break;                     //---MARCH RANDOM COLORS
-    case 15: thisdelay = 80; break;                     //---MARCH RWB COLORS
-    case 16: thisdelay = 60; thishue = 95; break;       //---RADIATION SYMBOL
+    case 10: thisdelay = 15; thishue; break;        //---PULSE COLOR BRIGHTNESS                      ОСТАВЛЯЕМ  вертикальные  + горизонтальные
+    case 11: thisdelay = 15; thishue; break;        //---PULSE COLOR SATURATION                      НЕПОНЯТНО
+    case 12: thisdelay = 60; thishue; break;      //---VERTICAL SOMETHING                            НЕПОНЯТНО
+    case 13: thisdelay = 100; thishue; break;                    //---CELL AUTO - RULE 30 (RED)       НЕПОНЯТНО
+    case 14: thisdelay = 100; break;                     //---MARCH RANDOM COLORS
+    case 15: thisdelay = 80; break;                     //---MARCH RWB COLORS                        ТАК СЕБЕ
+    case 16: thisdelay = 60; thishue; break;       //---RADIATION SYMBOL
     //---PLACEHOLDER FOR COLOR LOOP VAR DELAY VARS
-    case 19: thisdelay = 35; thishue = 180; break;      //---SIN WAVE BRIGHTNESS
+    case 19: thisdelay = 35; thishue; break;      //---SIN WAVE BRIGHTNESS
     case 20: thisdelay = 100; thishue = 0; break;       //---POP LEFT/RIGHT
     case 21: thisdelay = 100; thishue = 180; break;     //---QUADRATIC BRIGHTNESS CURVE
     //---PLACEHOLDER FOR FLAME VARS
-    case 23: thisdelay = 50; thisstep = 15; break;      //---VERITCAL RAINBOW
-    case 24: thisdelay = 50; break;                     //---PACMAN
-    case 25: thisdelay = 35; break;                     //---RANDOM COLOR POP
+    case 23: thisdelay = 50; thisstep = 15; break;      //---VERITCAL RAINBOW                         ОСТАВЛЯЕМ  вертикальные
+    case 24: thisdelay = 50; break;                     //---PACMAN                                   НЕПОНЯТНО
+    case 25: thisdelay = 35; break;                     //---RANDOM COLOR POP                       ОСТАВЛЯЕМ  вертикальные
     case 26: thisdelay = 25; thishue = 0; break;        //---EMERGECNY STROBE
     case 27: thisdelay = 25; thishue = 0; break;        //---RGB PROPELLER
     case 28: thisdelay = 100; thishue = 0; break;       //---KITT
-    case 29: thisdelay = 50; thishue = 95; break;       //---MATRIX RAIN
-    case 30: thisdelay = 5; break;                      //---NEW RAINBOW LOOP
+    case 29: thisdelay = 50; thishue = 95; break;       //---MATRIX RAIN                            ОСТАВЛЯЕМ  вертикальные
+    case 30: thisdelay = 5; break;                      //---NEW RAINBOW LOOP                       ОСТАВЛЯЕМ  вертикальные + горизонтальные
     case 31: thisdelay = 100; break;                    //---MARCH STRIP NOW CCW
     case 32: thisdelay = 100; break;                    //---MARCH STRIP NOW CCW
     case 33: thisdelay = 50; break;                     // colorWipe
@@ -277,13 +277,89 @@ void loop()
 
   
 // ------------- для монитора порта------------------------
-   if (Serial.available() > 0)  // если что то прислали
-   {    
-      String input = Serial.readStringUntil('\n');  // Читаем строку до новой строки
-      ledMode = input.toInt();                        // Преобразуем строку в целое число
-      change_mode(ledMode); 
-      Serial.print(ledMode);            
-   }
+   
+   if (Serial.available() > 0) {
+  String input = Serial.readStringUntil('\n'); // Читаем строку до новой строки
+  input.trim(); // Удаляем лишние пробелы в начале и конце строки
+  
+  int new_max_bright = max_bright; // Сохраняем текущие значения
+  int new_ledMode = ledMode;
+  int new_thishue = thishue;
+
+  // Разделяем строку на части по запятым
+  int first_comma = input.indexOf(',');
+  int second_comma = -1;
+  if (first_comma != -1)
+  {
+    second_comma = input.indexOf(',', first_comma + 1);
+  }
+ 
+  String part1 = "";
+  String part2 = "";
+  String part3 = "";
+    
+  if (first_comma != -1) {
+    part1 = input.substring(0, first_comma);
+        if (second_comma != -1) {
+        part2 = input.substring(first_comma+1, second_comma);
+        part3 = input.substring(second_comma+1);
+    } else {
+         part2 = input.substring(first_comma + 1);
+        }
+  } else {
+    part1 = input;
+  }
+    
+  // Парсим каждую часть и обновляем значения, если они есть
+  if (part1.startsWith("BRIGHT:")) {
+    String value = part1.substring(7); // Извлекаем число после "BRIGHT:"
+    new_max_bright = value.toInt();     // Преобразуем в int
+  } else if (part1.startsWith("MODE:")) {
+    String value = part1.substring(5); // Извлекаем число после "MODE:"
+    new_ledMode = value.toInt();        // Преобразуем в int
+  } else if (part1.startsWith("HUE:")) {
+    String value = part1.substring(4);
+     new_thishue = value.toInt();     
+  }
+
+
+   if (part2.startsWith("BRIGHT:")) {
+    String value = part2.substring(7); // Извлекаем число после "BRIGHT:"
+    new_max_bright = value.toInt();     // Преобразуем в int
+  } else if (part2.startsWith("MODE:")) {
+    String value = part2.substring(5); // Извлекаем число после "MODE:"
+    new_ledMode = value.toInt();        // Преобразуем в int
+  } else if (part2.startsWith("HUE:")) {
+    String value = part2.substring(4);
+     new_thishue = value.toInt();     
+  }
+ 
+   if (part3.startsWith("BRIGHT:")) {
+    String value = part3.substring(7); // Извлекаем число после "BRIGHT:"
+    new_max_bright = value.toInt();     // Преобразуем в int
+  } else if (part3.startsWith("MODE:")) {
+    String value = part3.substring(5); // Извлекаем число после "MODE:"
+    new_ledMode = value.toInt();        // Преобразуем в int
+  } else if (part3.startsWith("HUE:")) {
+    String value = part3.substring(4);
+     new_thishue = value.toInt();     
+  }
+    
+    max_bright = new_max_bright;
+    ledMode = new_ledMode;
+    thishue = new_thishue;
+    
+    LEDS.setBrightness(max_bright);
+
+    
+    
+    Serial.print(thishue); // Выводим текущий режим
+  change_mode(ledMode); // Вызываем функцию с обновленным ledMode
+  Serial.print(ledMode); // Выводим текущий режим
+}
+
+
+//-----------------------------------------------------------
 
   switch (ledMode)
   {
