@@ -1,0 +1,369 @@
+//---------------------------------------------------------------------------
+
+#include <vcl.h>
+#pragma hdrstop
+
+#include "Unit1.h"
+#include <windows.h>
+#include <stdio.h>
+#include <System.hpp> // Для ShowMessage
+#include <math.h> // Для sqrtf
+#include <algorithm> // Для std::max, std::min
+#include <Registry.hpp>
+#include <stdlib.h>
+#include "IniFiles.hpp"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+#pragma resource "*.dfm"
+TForm1 *Form1;
+String mode,hue,bright;
+TIniFile *ini = new TIniFile (ExtractFilePath(ParamStr(0))+"EWEsetting.ini");
+//---------------------------------------------------------------------------
+__fastcall TForm1::TForm1(TComponent* Owner)
+	: TForm(Owner)
+{
+}
+//---------------------------------------------------------------------------
+
+
+ // Структура для хранения HSV
+struct HSVColor {
+    uint8_t h;
+    uint8_t s;
+    uint8_t v;
+};
+
+// Функция для преобразования RGB в HSV
+HSVColor rgbToHsv(uint8_t r, uint8_t g, uint8_t b) {
+    float rf = r / 255.0f;
+    float gf = g / 255.0f;
+    float bf = b / 255.0f;
+
+    float max_val = std::max({rf, gf, bf});
+    float min_val = std::min({rf, gf, bf});
+    float hue = 0.0f, saturation = 0.0f, value = max_val;
+
+    if (max_val != min_val) {
+        float delta = max_val - min_val;
+        if( max_val == rf ) {
+            hue = 60.0f * (fmod((gf - bf) / delta, 6.0f));
+        } else if( max_val == gf ) {
+            hue = 60.0f * ((bf - rf) / delta + 2.0f);
+        } else if( max_val == bf ) {
+           hue = 60.0f * ((rf - gf) / delta + 4.0f);
+        }
+        if (hue < 0.0f)
+            hue += 360.0f;
+
+        if (max_val != 0.0f)
+           saturation = delta / max_val;
+        else
+           saturation = 0.0f;
+    }
+
+
+    HSVColor hsv;
+    hsv.h = static_cast<uint8_t>(hue / 360.0f * 255.0f);
+    hsv.s = static_cast<uint8_t>(saturation * 255.0f);
+    hsv.v = static_cast<uint8_t>(value * 255.0f);
+
+    return hsv;
+}
+
+
+
+//---------------------------------------------------------------------------
+
+// Функция для отправки данных в COM-порт
+bool SendDataToComPort(const char *portName, const char *dataToSend) {
+    HANDLE hComm;
+    DCB dcbSerialParams = {0};
+    COMMTIMEOUTS timeouts = {0};
+    DWORD bytesWritten;
+
+    // Открытие COM-порта
+    hComm = CreateFileA(portName,  // Используем CreateFileA
+                     GENERIC_READ | GENERIC_WRITE,
+                     0,
+                     NULL,
+                     OPEN_EXISTING,
+                     0,
+                     NULL);
+
+    if (hComm == INVALID_HANDLE_VALUE) {
+        printf("Ошибка при открытии порта: %d\n", GetLastError());
+        return false;
+    }
+
+    // Настройка параметров порта
+    dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
+    if (!GetCommState(hComm, &dcbSerialParams)) {
+        printf("Ошибка при получении параметров порта: %d\n", GetLastError());
+        CloseHandle(hComm);
+        return false;
+    }
+
+    dcbSerialParams.BaudRate = CBR_9600; // Скорость порта (9600)
+    dcbSerialParams.ByteSize = 8;        // Биты данных
+    dcbSerialParams.Parity   = NOPARITY; // Четность
+    dcbSerialParams.StopBits = ONESTOPBIT; // Стоповые биты
+
+    if (!SetCommState(hComm, &dcbSerialParams)) {
+        printf("Ошибка при настройке параметров порта: %d\n", GetLastError());
+        CloseHandle(hComm);
+        return false;
+    }
+
+    // Настройка таймаутов
+    timeouts.ReadIntervalTimeout = 50;
+    timeouts.ReadTotalTimeoutConstant = 50;
+    timeouts.ReadTotalTimeoutMultiplier = 10;
+    timeouts.WriteTotalTimeoutConstant = 50;
+    timeouts.WriteTotalTimeoutMultiplier = 10;
+
+    if (!SetCommTimeouts(hComm, &timeouts)) {
+       printf("Ошибка при настройке таймаутов: %d\n", GetLastError());
+       CloseHandle(hComm);
+       return false;
+    }
+
+    // Отправка данных
+    if (!WriteFile(hComm, dataToSend, strlen(dataToSend), &bytesWritten, NULL)) {
+         printf("Ошибка при отправке данных: %d\n", GetLastError());
+        CloseHandle(hComm);
+         return false;
+    }
+
+
+    // Закрытие порта
+    CloseHandle(hComm);
+    return true;
+}
+
+//---------------------------------------------------------------------------
+void __fastcall TForm1::Button1Click(TObject *Sender)
+{
+
+	Label1->Caption = "MODE:"+mode+",COLOR:"+TrackBar1->Position+",BRIGHT:"+abs(TrackBar2->Position);
+
+
+	AnsiString ansiString = Label1->Caption;
+    AnsiString portNameStr = "\\\\.\\" + ComboBox1->Text;
+	const char* portName = portNameStr.c_str();
+
+	//const char *portName = "\\\\.\\COM11"; // Замените на ваш COM-порт
+	const char *dataToSend = ansiString.c_str(); // Данные для отправки
+
+	if (SendDataToComPort(portName, dataToSend))
+	{
+		//ShowMessage("Данные отправлены успешно!");
+
+	}
+	else
+	{
+		ShowMessage("Ошибка при отправке данных!");
+	}
+}
+//---------------------------------------------------------------------------
+void __fastcall TForm1::ColorListBox1Click(TObject *Sender)
+{
+if (ColorListBox1->ItemIndex != -1){
+       TColor selectedColor = ColorListBox1->Selected;
+
+       // Извлекаем R, G, B из TColor
+       uint8_t red = GetRValue(selectedColor);
+       uint8_t green = GetGValue(selectedColor);
+       uint8_t blue = GetBValue(selectedColor);
+
+        // Преобразуем RGB в HSV
+        HSVColor hsv = rgbToHsv(red, green, blue);
+
+       // Выводим значения HSV (можно адаптировать под FastLED)
+		//printf("RGB: (%d, %d, %d)\n", red, green, blue);
+		//printf("HSV: (H: %u, S: %u, V: %u)\n", hsv.h, hsv.s, hsv.v);
+        Label1->Caption = "HSV: H:" + IntToStr(hsv.h) + " S:" + IntToStr(hsv.s) + " V:" + IntToStr(hsv.v);
+	}
+}
+//---------------------------------------------------------------------------
+void __fastcall TForm1::TrackBar1Change(TObject *Sender)
+{
+	hue = TrackBar1->Position;
+}
+//---------------------------------------------------------------------------
+
+
+void __fastcall TForm1::RadioButton1Click(TObject *Sender)
+{
+	ComboBox2->Items->LoadFromFile("vertical.txt");
+	ini->WriteString("LEGS","Legs","vertical");
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::RadioButton2Click(TObject *Sender)
+{
+	ComboBox2->Items->LoadFromFile("horizontal.txt");
+	ini->WriteString("LEGS","Legs","horizontal");
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::ComboBox2Change(TObject *Sender)
+{
+
+
+	if(ComboBox2->Text == "Выключить 0")
+	{
+		mode="1";
+		TrackBar1->Visible = false;
+		Image1->Visible = false;
+		TrackBar2->Position = 0;
+	}
+	if(ComboBox2->Text == "Один цвет 1")
+	{
+		mode="1";
+		TrackBar1->Visible = true;
+		Image1->Visible = true;
+	}
+	if(ComboBox2->Text == "плавная смена цветов всей ленты 2")
+	{
+		mode="2";
+		TrackBar1->Visible = false;
+		Image1->Visible = false;
+	}
+	if(ComboBox2->Text == "крутящаяся радуга 3")
+	{
+		mode="3";
+        TrackBar1->Visible = false;
+		Image1->Visible = false;
+	}
+	if(ComboBox2->Text == "случайная смена цветов 4")
+	{
+		mode="4";
+        TrackBar1->Visible = false;
+		Image1->Visible = false;
+	}
+	if(ComboBox2->Text == "бегающий светодиод 5")
+	{
+		mode="5";
+        TrackBar1->Visible = true;
+		Image1->Visible = true;
+	}
+	if(ComboBox2->Text == "бегающий паровозик светодиодов 6")
+	{
+		mode="6";
+        TrackBar1->Visible = true;
+		Image1->Visible = true;
+	}
+	if(ComboBox2->Text == "стробоскоп 9")
+	{
+		mode="9";
+	}
+	if(ComboBox2->Text == "пульсация 10")
+	{
+		mode="10";
+	}
+}
+//---------------------------------------------------------------------------
+
+
+void __fastcall TForm1::FormCreate(TObject *Sender)
+{
+		ComboBox1->Clear(); // Очищаем ComboBox перед заполнением
+
+			TRegistry *registry = new TRegistry();
+			try {
+				registry->RootKey = HKEY_LOCAL_MACHINE;
+				registry->Access = KEY_READ;
+
+				if (registry->OpenKey("HARDWARE\\DEVICEMAP\\SERIALCOMM", false)) {
+					TStrings *portNames = new TStringList();
+					try {
+						registry->GetValueNames(portNames);
+
+						for (int i = 0; i < portNames->Count; i++) {
+							String portName = registry->ReadString(portNames->Strings[i]);
+							ComboBox1->Items->Add(portName);
+						}
+
+						if (ComboBox1->Items->Count > 0) {
+							ComboBox1->ItemIndex = 0; // Выбираем первый элемент
+						}
+					}
+					__finally {
+						delete portNames;
+					}
+				}
+			}
+			__finally {
+				registry->CloseKey();
+				delete registry;
+			}
+
+
+
+			if(FileExists("ComPort.ini"))
+			{
+				TStringList *settings = new TStringList();
+				try
+				{
+					// Загружаем настройки
+					settings->LoadFromFile("ComPort.ini");
+
+					// Устанавливаем сохраненное значение в ComboBox
+					String savedPort = settings->Values["COMPort"];
+					if(!savedPort.IsEmpty())
+					{
+						int index = ComboBox1->Items->IndexOf(savedPort);
+						if(index != -1)
+							ComboBox1->ItemIndex = index;
+					}
+				}
+				__finally
+				{
+					delete settings;
+				}
+			}
+
+
+
+			//----------------Загружаем настройки---------------------
+
+			if(ini->ReadString("LEGS","Legs","vertical")== "vertical")
+			{
+				RadioButton1->Checked = true;
+			}
+			else
+			{
+				RadioButton2->Checked = true;
+			}
+
+
+
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::ComboBox1Change(TObject *Sender)
+{
+	   TStringList *settings = new TStringList();
+		try
+		{
+			// Записываем выбранный порт
+			settings->Values["COMPort"] = ComboBox1->Text;
+
+			// Сохраняем в файл
+			settings->SaveToFile("ComPort.ini");
+		}
+		__finally
+		{
+			delete settings;
+		}
+}
+//---------------------------------------------------------------------------
+
+
+void __fastcall TForm1::TrackBar2Change(TObject *Sender)
+{
+	Label2->Caption = TrackBar2->Position;
+
+}
+//---------------------------------------------------------------------------
+
