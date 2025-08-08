@@ -1,0 +1,61 @@
+//---------------------------------------------------------------------------
+
+#ifndef Unit1H
+#define Unit1H
+//---------------------------------------------------------------------------
+#include <System.Classes.hpp>
+#include <Vcl.Controls.hpp>
+#include <Vcl.StdCtrls.hpp>
+#include <Vcl.Forms.hpp>
+#include <Vcl.ColorGrd.hpp>
+#include <Vcl.ExtCtrls.hpp>
+#include <Vcl.ComCtrls.hpp>
+#include <System.ImageList.hpp>
+#include <Vcl.ImgList.hpp>
+#include <Vcl.Imaging.jpeg.hpp>
+#include <Windows.h>
+#include "trayicon.h"
+#include <Vcl.Menus.hpp>
+#include <Vcl.Imaging.pngimage.hpp> // ƒÎˇ ‡·ÓÚ˚ Ò Windows API
+//---------------------------------------------------------------------------
+class TForm1 : public TForm
+{
+__published:	// IDE-managed Components
+	TButton *Button1;
+	TComboBox *ComboBox2;
+	TColorListBox *ColorListBox1;
+	TLabel *Label1;
+	TImage *Image1;
+	TTrackBar *TrackBar1;
+	TRadioButton *RadioButton1;
+	TRadioButton *RadioButton2;
+	TGroupBox *GroupBox1;
+	TComboBox *ComboBox1;
+	TTrackBar *TrackBar2;
+	TLabel *Label2;
+	TMemo *Memo1;
+	TPopupMenu *PopupMenu1;
+	TMenuItem *N1;
+	TCTrayIcon *CTrayIcon1;
+	TImage *Image2;
+	void __fastcall Button1Click(TObject *Sender);
+	void __fastcall ColorListBox1Click(TObject *Sender);
+	void __fastcall TrackBar1Change(TObject *Sender);
+	void __fastcall RadioButton1Click(TObject *Sender);
+	void __fastcall RadioButton2Click(TObject *Sender);
+	void __fastcall ComboBox2Change(TObject *Sender);
+	void __fastcall FormCreate(TObject *Sender);
+	void __fastcall ComboBox1Change(TObject *Sender);
+	void __fastcall TrackBar2Change(TObject *Sender);
+	void __fastcall N1Click(TObject *Sender);
+	void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
+	void __fastcall CTrayIcon1Click(TObject *Sender);
+private:	// User declarations
+	void __fastcall OnApplicationMessage(TMsg &Msg, bool &Handled);  // Œ¡⁄ﬂ¬À≈Õ»≈ ‘”Õ ÷»»
+public:		// User declarations
+	__fastcall TForm1(TComponent* Owner);
+};
+//---------------------------------------------------------------------------
+extern PACKAGE TForm1 *Form1;
+//---------------------------------------------------------------------------
+#endif

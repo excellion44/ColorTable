@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+п»ї//---------------------------------------------------------------------------
 
 #include <vcl.h>
 #pragma hdrstop
@@ -6,34 +6,84 @@
 #include "Unit1.h"
 #include <windows.h>
 #include <stdio.h>
-#include <System.hpp> // Для ShowMessage
-#include <math.h> // Для sqrtf
-#include <algorithm> // Для std::max, std::min
+#include <System.hpp> // Р”Р»СЏ ShowMessage
+#include <math.h> // Р”Р»СЏ sqrtf
+#include <algorithm> // Р”Р»СЏ std::max, std::min
 #include <Registry.hpp>
 #include <stdlib.h>
 #include "IniFiles.hpp"
+#include <Windows.h> // Ж’Р»В¤ СЂР°Р±РѕС‚С‹ СЃ Windows API
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 #pragma resource "*.dfm"
 TForm1 *Form1;
 String mode,hue,bright;
 TIniFile *ini = new TIniFile (ExtractFilePath(ParamStr(0))+"EWEsetting.ini");
+int color =0, Bright=0;
 //---------------------------------------------------------------------------
 __fastcall TForm1::TForm1(TComponent* Owner)
 	: TForm(Owner)
 {
+    // вЂ“РµРіРёСЃС‚СЂРёСЂСѓРµРј РѕР±СЂР°Р±РѕС‚С‡РёРє СЃРѕР±С‹С‚РёВ¤ РґР»В¤ РјРѕРЅРёС‚РѕСЂРёРЅРіР° СЃРѕСЃС‚РѕВ¤РЅРёВ¤ СЃРёСЃС‚РµРјС‹
+	Application->OnMessage = OnApplicationMessage;
 }
 //---------------------------------------------------------------------------
 
+void __fastcall TForm1::OnApplicationMessage(TMsg &Msg, bool &Handled)
+{
 
- // Структура для хранения HSV
+	 if (Msg.message != 512 && Msg.message != 96 && Msg.message != 280 && Msg.message != 513 && Msg.message != 514 && Msg.message != 30 && Msg.message != 800 && Msg.message != 275 && Msg.message != 160 && Msg.message != 675 && Msg.message != 674 && Msg.message != 522 && Msg.message != 15)
+	 {
+		Memo1->Lines->Add(Msg.message);
+		Memo1->Lines->SaveToFile("LogWindowsMessage.txt");
+	 }
+
+
+	if (Msg.message == 800)
+	{
+		Memo1->Lines->Add("РЎРћРќРќРќРќРќРќРќРќРќРќРќРќРќРќРќРќРќРќРќРќРќРќРќРќ");
+		Label1->Caption = "MODE:0,COLOR:0,BRIGHT:0";
+        Button1->Click();
+
+	}
+    if (Msg.message == 689)
+	{
+		int index = ComboBox2->Items->IndexOf(ini->ReadString("VERTICAL","Mode","1"));
+				mode = index;
+						if(index != -1)
+						{
+							ComboBox2->ItemIndex = index;
+							TrackBar1->Position = StrToInt(ini->ReadString(index,"Color","0"));
+							TrackBar2->Position = StrToInt(ini->ReadString(index,"Bright","0"));
+							Label1->Caption = "MODE:"+IntToStr(ComboBox2->ItemIndex)+",COLOR:"+TrackBar1->Position+",BRIGHT:"+TrackBar2->Position+"";
+						}
+
+				if(ComboBox2->ItemIndex == 2 || ComboBox2->ItemIndex == 3 || ComboBox2->ItemIndex == 4)
+				{
+					 TrackBar1->Visible = false;
+					 Image1->Visible = false;
+
+				}
+				else
+				{
+					 TrackBar1->Visible = true;
+					 Image1->Visible = true;
+				}
+        Button1->Click();
+
+	}
+
+
+}
+
+ // РЎС‚СЂСѓРєС‚СѓСЂР° РґР»СЏ С…СЂР°РЅРµРЅРёСЏ HSV
 struct HSVColor {
     uint8_t h;
     uint8_t s;
     uint8_t v;
 };
 
-// Функция для преобразования RGB в HSV
+// Р¤СѓРЅРєС†РёСЏ РґР»СЏ РїСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёСЏ RGB РІ HSV
 HSVColor rgbToHsv(uint8_t r, uint8_t g, uint8_t b) {
     float rf = r / 255.0f;
     float gf = g / 255.0f;
@@ -74,15 +124,15 @@ HSVColor rgbToHsv(uint8_t r, uint8_t g, uint8_t b) {
 
 //---------------------------------------------------------------------------
 
-// Функция для отправки данных в COM-порт
+// Р¤СѓРЅРєС†РёСЏ РґР»СЏ РѕС‚РїСЂР°РІРєРё РґР°РЅРЅС‹С… РІ COM-РїРѕСЂС‚
 bool SendDataToComPort(const char *portName, const char *dataToSend) {
     HANDLE hComm;
     DCB dcbSerialParams = {0};
     COMMTIMEOUTS timeouts = {0};
     DWORD bytesWritten;
 
-    // Открытие COM-порта
-    hComm = CreateFileA(portName,  // Используем CreateFileA
+    // РћС‚РєСЂС‹С‚РёРµ COM-РїРѕСЂС‚Р°
+    hComm = CreateFileA(portName,  // РСЃРїРѕР»СЊР·СѓРµРј CreateFileA
                      GENERIC_READ | GENERIC_WRITE,
                      0,
                      NULL,
@@ -91,30 +141,30 @@ bool SendDataToComPort(const char *portName, const char *dataToSend) {
                      NULL);
 
     if (hComm == INVALID_HANDLE_VALUE) {
-        printf("Ошибка при открытии порта: %d\n", GetLastError());
+        printf("РћС€РёР±РєР° РїСЂРё РѕС‚РєСЂС‹С‚РёРё РїРѕСЂС‚Р°: %d\n", GetLastError());
         return false;
     }
 
-    // Настройка параметров порта
+    // РќР°СЃС‚СЂРѕР№РєР° РїР°СЂР°РјРµС‚СЂРѕРІ РїРѕСЂС‚Р°
     dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
     if (!GetCommState(hComm, &dcbSerialParams)) {
-        printf("Ошибка при получении параметров порта: %d\n", GetLastError());
+        printf("РћС€РёР±РєР° РїСЂРё РїРѕР»СѓС‡РµРЅРёРё РїР°СЂР°РјРµС‚СЂРѕРІ РїРѕСЂС‚Р°: %d\n", GetLastError());
         CloseHandle(hComm);
         return false;
     }
 
-    dcbSerialParams.BaudRate = CBR_9600; // Скорость порта (9600)
-    dcbSerialParams.ByteSize = 8;        // Биты данных
-    dcbSerialParams.Parity   = NOPARITY; // Четность
-    dcbSerialParams.StopBits = ONESTOPBIT; // Стоповые биты
+    dcbSerialParams.BaudRate = CBR_9600; // РЎРєРѕСЂРѕСЃС‚СЊ РїРѕСЂС‚Р° (9600)
+    dcbSerialParams.ByteSize = 8;        // Р‘РёС‚С‹ РґР°РЅРЅС‹С…
+    dcbSerialParams.Parity   = NOPARITY; // Р§РµС‚РЅРѕСЃС‚СЊ
+    dcbSerialParams.StopBits = ONESTOPBIT; // РЎС‚РѕРїРѕРІС‹Рµ Р±РёС‚С‹
 
     if (!SetCommState(hComm, &dcbSerialParams)) {
-        printf("Ошибка при настройке параметров порта: %d\n", GetLastError());
+        printf("РћС€РёР±РєР° РїСЂРё РЅР°СЃС‚СЂРѕР№РєРµ РїР°СЂР°РјРµС‚СЂРѕРІ РїРѕСЂС‚Р°: %d\n", GetLastError());
         CloseHandle(hComm);
         return false;
     }
 
-    // Настройка таймаутов
+    // РќР°СЃС‚СЂРѕР№РєР° С‚Р°Р№РјР°СѓС‚РѕРІ
     timeouts.ReadIntervalTimeout = 50;
     timeouts.ReadTotalTimeoutConstant = 50;
     timeouts.ReadTotalTimeoutMultiplier = 10;
@@ -122,20 +172,20 @@ bool SendDataToComPort(const char *portName, const char *dataToSend) {
     timeouts.WriteTotalTimeoutMultiplier = 10;
 
     if (!SetCommTimeouts(hComm, &timeouts)) {
-       printf("Ошибка при настройке таймаутов: %d\n", GetLastError());
+       printf("РћС€РёР±РєР° РїСЂРё РЅР°СЃС‚СЂРѕР№РєРµ С‚Р°Р№РјР°СѓС‚РѕРІ: %d\n", GetLastError());
        CloseHandle(hComm);
        return false;
     }
 
-    // Отправка данных
+    // РћС‚РїСЂР°РІРєР° РґР°РЅРЅС‹С…
     if (!WriteFile(hComm, dataToSend, strlen(dataToSend), &bytesWritten, NULL)) {
-         printf("Ошибка при отправке данных: %d\n", GetLastError());
+         printf("РћС€РёР±РєР° РїСЂРё РѕС‚РїСЂР°РІРєРµ РґР°РЅРЅС‹С…: %d\n", GetLastError());
         CloseHandle(hComm);
          return false;
     }
 
 
-    // Закрытие порта
+    // Р—Р°РєСЂС‹С‚РёРµ РїРѕСЂС‚Р°
     CloseHandle(hComm);
     return true;
 }
@@ -144,73 +194,73 @@ bool SendDataToComPort(const char *portName, const char *dataToSend) {
 void __fastcall TForm1::Button1Click(TObject *Sender)
 {
 
-	Label1->Caption = "MODE:"+mode+",COLOR:"+TrackBar1->Position+",BRIGHT:"+abs(TrackBar2->Position);
+
 
 
 	AnsiString ansiString = Label1->Caption;
     AnsiString portNameStr = "\\\\.\\" + ComboBox1->Text;
 	const char* portName = portNameStr.c_str();
 
-	//const char *portName = "\\\\.\\COM11"; // Замените на ваш COM-порт
-	const char *dataToSend = ansiString.c_str(); // Данные для отправки
+	//const char *portName = "\\\\.\\COM11"; // Р—Р°РјРµРЅРёС‚Рµ РЅР° РІР°С€ COM-РїРѕСЂС‚
+	const char *dataToSend = ansiString.c_str(); // Р”Р°РЅРЅС‹Рµ РґР»СЏ РѕС‚РїСЂР°РІРєРё
 
 	if (SendDataToComPort(portName, dataToSend))
 	{
-		//ShowMessage("Данные отправлены успешно!");
+		//ShowMessage("Р”Р°РЅРЅС‹Рµ РѕС‚РїСЂР°РІР»РµРЅС‹ СѓСЃРїРµС€РЅРѕ!");
 
 	}
 	else
 	{
-		ShowMessage("Ошибка при отправке данных!");
+		ShowMessage("РћС€РёР±РєР° РїСЂРё РѕС‚РїСЂР°РІРєРµ РґР°РЅРЅС‹С…!");
 	}
 
 
 
-	//---------------Сохраняем параметры каждого эффекта------------------
+	//---------------РЎРѕС…СЂР°РЅСЏРµРј РїР°СЂР°РјРµС‚СЂС‹ РєР°Р¶РґРѕРіРѕ СЌС„С„РµРєС‚Р°------------------
 
-    if(ComboBox2->Text == "Выключить 0")
+    if(ComboBox2->Text == "Р’С‹РєР»СЋС‡РёС‚СЊ 0")
 	{
 
-		 ini->WriteString("1","Color","0");
-		 ini->WriteString("1","Bright","0");
+		 ini->WriteString("0","Color","0");
+		 ini->WriteString("0","Bright","0");
 	}
-	if(ComboBox2->Text == "Один цвет 1")
+	if(ComboBox2->Text == "РћРґРёРЅ С†РІРµС‚ 1")
 	{
 
 		ini->WriteString("1","Color",TrackBar1->Position);
 		ini->WriteString("1","Bright",TrackBar2->Position);
 	}
-	if(ComboBox2->Text == "плавная смена цветов всей ленты 2")
+	if(ComboBox2->Text == "РїР»Р°РІРЅР°СЏ СЃРјРµРЅР° С†РІРµС‚РѕРІ РІСЃРµР№ Р»РµРЅС‚С‹ 2")
 	{
 
 		ini->WriteString("2","Bright",TrackBar2->Position);
 	}
-	if(ComboBox2->Text == "крутящаяся радуга 3")
+	if(ComboBox2->Text == "РєСЂСѓС‚СЏС‰Р°СЏСЃСЏ СЂР°РґСѓРіР° 3")
 	{
 
 		ini->WriteString("3","Bright",TrackBar2->Position);
 	}
-	if(ComboBox2->Text == "случайная смена цветов 4")
+	if(ComboBox2->Text == "СЃР»СѓС‡Р°Р№РЅР°СЏ СЃРјРµРЅР° С†РІРµС‚РѕРІ 4")
 	{
 
 		ini->WriteString("4","Bright",TrackBar2->Position);
 	}
-	if(ComboBox2->Text == "бегающий светодиод 5")
+	if(ComboBox2->Text == "Р±РµРіР°СЋС‰РёР№ СЃРІРµС‚РѕРґРёРѕРґ 5")
 	{
 		ini->WriteString("5","Bright",TrackBar2->Position);
 		ini->WriteString("5","Color",TrackBar1->Position);
 	}
-	if(ComboBox2->Text == "бегающий паровозик светодиодов 6")
+	if(ComboBox2->Text == "Р±РµРіР°СЋС‰РёР№ РїР°СЂРѕРІРѕР·РёРє СЃРІРµС‚РѕРґРёРѕРґРѕРІ 6")
 	{
 		ini->WriteString("6","Bright",TrackBar2->Position);
 		ini->WriteString("6","Color",TrackBar1->Position);
 	}
-	if(ComboBox2->Text == "стробоскоп 9")
+	if(ComboBox2->Text == "СЃС‚СЂРѕР±РѕСЃРєРѕРї 9")
 	{
 		ini->WriteString("7","Bright",TrackBar2->Position);
 		ini->WriteString("7","Color",TrackBar1->Position);
 	}
-	if(ComboBox2->Text == "пульсация 10")
+	if(ComboBox2->Text == "РїСѓР»СЊСЃР°С†РёСЏ 10")
 	{
 
 	}
@@ -228,15 +278,15 @@ void __fastcall TForm1::ColorListBox1Click(TObject *Sender)
 if (ColorListBox1->ItemIndex != -1){
        TColor selectedColor = ColorListBox1->Selected;
 
-       // Извлекаем R, G, B из TColor
+       // РР·РІР»РµРєР°РµРј R, G, B РёР· TColor
        uint8_t red = GetRValue(selectedColor);
        uint8_t green = GetGValue(selectedColor);
        uint8_t blue = GetBValue(selectedColor);
 
-        // Преобразуем RGB в HSV
+        // РџСЂРµРѕР±СЂР°Р·СѓРµРј RGB РІ HSV
         HSVColor hsv = rgbToHsv(red, green, blue);
 
-       // Выводим значения HSV (можно адаптировать под FastLED)
+       // Р’С‹РІРѕРґРёРј Р·РЅР°С‡РµРЅРёСЏ HSV (РјРѕР¶РЅРѕ Р°РґР°РїС‚РёСЂРѕРІР°С‚СЊ РїРѕРґ FastLED)
 		//printf("RGB: (%d, %d, %d)\n", red, green, blue);
 		//printf("HSV: (H: %u, S: %u, V: %u)\n", hsv.h, hsv.s, hsv.v);
         Label1->Caption = "HSV: H:" + IntToStr(hsv.h) + " S:" + IntToStr(hsv.s) + " V:" + IntToStr(hsv.v);
@@ -246,6 +296,8 @@ if (ColorListBox1->ItemIndex != -1){
 void __fastcall TForm1::TrackBar1Change(TObject *Sender)
 {
 	hue = TrackBar1->Position;
+	color =  TrackBar1->Position;
+	Label1->Caption = "MODE:"+mode+",COLOR:"+color+",BRIGHT:"+Bright;
 }
 //---------------------------------------------------------------------------
 
@@ -268,14 +320,14 @@ void __fastcall TForm1::ComboBox2Change(TObject *Sender)
 {
 
 
-	if(ComboBox2->Text == "Выключить 0")
+	if(ComboBox2->Text == "Р’С‹РєР»СЋС‡РёС‚СЊ 0")
 	{
 		mode="0";
 		TrackBar1->Visible = false;
 		Image1->Visible = false;
 		TrackBar2->Position = 0;
 	}
-	if(ComboBox2->Text == "Один цвет 1")
+	if(ComboBox2->Text == "РћРґРёРЅ С†РІРµС‚ 1")
 	{
 		mode="1";
 		TrackBar1->Visible = true;
@@ -283,27 +335,27 @@ void __fastcall TForm1::ComboBox2Change(TObject *Sender)
 		TrackBar1->Position = StrToInt(ini->ReadString("1","Color","0"));
 		TrackBar2->Position = StrToInt(ini->ReadString("1","Bright","0"));
 	}
-	if(ComboBox2->Text == "плавная смена цветов всей ленты 2")
+	if(ComboBox2->Text == "РїР»Р°РІРЅР°СЏ СЃРјРµРЅР° С†РІРµС‚РѕРІ РІСЃРµР№ Р»РµРЅС‚С‹ 2")
 	{
 		mode="2";
 		TrackBar1->Visible = false;
 		Image1->Visible = false;
 		TrackBar2->Position = StrToInt(ini->ReadString("2","Bright","0"));
 	}
-	if(ComboBox2->Text == "крутящаяся радуга 3")
+	if(ComboBox2->Text == "РєСЂСѓС‚СЏС‰Р°СЏСЃСЏ СЂР°РґСѓРіР° 3")
 	{
 		mode="3";
 		TrackBar1->Visible = false;
 		Image1->Visible = false;
         TrackBar2->Position = StrToInt(ini->ReadString("3","Bright","0"));
 	}
-	if(ComboBox2->Text == "случайная смена цветов 4")
+	if(ComboBox2->Text == "СЃР»СѓС‡Р°Р№РЅР°СЏ СЃРјРµРЅР° С†РІРµС‚РѕРІ 4")
 	{
 		mode="4";
 		TrackBar1->Visible = false;
 		Image1->Visible = false;
 	}
-	if(ComboBox2->Text == "бегающий светодиод 5")
+	if(ComboBox2->Text == "Р±РµРіР°СЋС‰РёР№ СЃРІРµС‚РѕРґРёРѕРґ 5")
 	{
 		mode="5";
 		TrackBar1->Visible = true;
@@ -311,7 +363,7 @@ void __fastcall TForm1::ComboBox2Change(TObject *Sender)
 		TrackBar1->Position = StrToInt(ini->ReadString("5","Color","0"));
 		TrackBar2->Position = StrToInt(ini->ReadString("5","Bright","0"));
 	}
-	if(ComboBox2->Text == "бегающий паровозик светодиодов 6")
+	if(ComboBox2->Text == "Р±РµРіР°СЋС‰РёР№ РїР°СЂРѕРІРѕР·РёРє СЃРІРµС‚РѕРґРёРѕРґРѕРІ 6")
 	{
 		mode="6";
 		TrackBar1->Visible = true;
@@ -319,7 +371,7 @@ void __fastcall TForm1::ComboBox2Change(TObject *Sender)
 		TrackBar1->Position = StrToInt(ini->ReadString("6","Color","0"));
 		TrackBar2->Position = StrToInt(ini->ReadString("6","Bright","0"));
 	}
-	if(ComboBox2->Text == "стробоскоп 9")
+	if(ComboBox2->Text == "СЃС‚СЂРѕР±РѕСЃРєРѕРї 9")
 	{
 		mode="7";
         TrackBar1->Visible = true;
@@ -327,17 +379,20 @@ void __fastcall TForm1::ComboBox2Change(TObject *Sender)
 		TrackBar1->Position = StrToInt(ini->ReadString("7","Color","0"));
 		TrackBar2->Position = StrToInt(ini->ReadString("7","Bright","0"));
 	}
-	if(ComboBox2->Text == "пульсация 10")
+	if(ComboBox2->Text == "РїСѓР»СЊСЃР°С†РёСЏ 10")
 	{
 		mode="10";
 	}
+
+	Label1->Caption = "MODE:"+mode+",COLOR:"+color+",BRIGHT:"+Bright;
 }
 //---------------------------------------------------------------------------
 
 
 void __fastcall TForm1::FormCreate(TObject *Sender)
 {
-		ComboBox1->Clear(); // Очищаем ComboBox перед заполнением
+
+		ComboBox1->Clear(); // РћС‡РёС‰Р°РµРј ComboBox РїРµСЂРµРґ Р·Р°РїРѕР»РЅРµРЅРёРµРј
 
 			TRegistry *registry = new TRegistry();
 			try {
@@ -355,7 +410,7 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
 						}
 
 						if (ComboBox1->Items->Count > 0) {
-							ComboBox1->ItemIndex = 0; // Выбираем первый элемент
+							ComboBox1->ItemIndex = 0; // Р’С‹Р±РёСЂР°РµРј РїРµСЂРІС‹Р№ СЌР»РµРјРµРЅС‚
 						}
 					}
 					__finally {
@@ -375,10 +430,10 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
 				TStringList *settings = new TStringList();
 				try
 				{
-					// Загружаем настройки
+					// Р—Р°РіСЂСѓР¶Р°РµРј РЅР°СЃС‚СЂРѕР№РєРё
 					settings->LoadFromFile("ComPort.ini");
 
-					// Устанавливаем сохраненное значение в ComboBox
+					// РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј СЃРѕС…СЂР°РЅРµРЅРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ РІ ComboBox
 					String savedPort = settings->Values["COMPort"];
 					if(!savedPort.IsEmpty())
 					{
@@ -395,7 +450,7 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
 
 
 
-			//----------------Загружаем настройки---------------------
+			//----------------Р—Р°РіСЂСѓР¶Р°РµРј РЅР°СЃС‚СЂРѕР№РєРё---------------------
 
 			if(ini->ReadString("LEGS","Legs","vertical")== "vertical")
 			{
@@ -416,12 +471,14 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
 						{
 							ComboBox2->ItemIndex = index;
 							TrackBar1->Position = StrToInt(ini->ReadString(index,"Color","0"));
+							color = StrToInt(ini->ReadString(index,"Color","0"));
 							TrackBar2->Position = StrToInt(ini->ReadString(index,"Bright","0"));
+							Bright =  abs(TrackBar2->Position);
 						}
 
 				if(ComboBox2->ItemIndex == 2 || ComboBox2->ItemIndex == 3 || ComboBox2->ItemIndex == 4)
 				{
-                     TrackBar1->Visible = false;
+					 TrackBar1->Visible = false;
 					 Image1->Visible = false;
 
 				}
@@ -430,8 +487,10 @@ void __fastcall TForm1::FormCreate(TObject *Sender)
 					 TrackBar1->Visible = true;
 					 Image1->Visible = true;
 				}
+                Label1->Caption = "MODE:"+mode+",COLOR:"+TrackBar1->Position+",BRIGHT:"+abs(TrackBar2->Position);
 
 			}
+
 
 
 
@@ -443,10 +502,10 @@ void __fastcall TForm1::ComboBox1Change(TObject *Sender)
 	   TStringList *settings = new TStringList();
 		try
 		{
-			// Записываем выбранный порт
+			// Р—Р°РїРёСЃС‹РІР°РµРј РІС‹Р±СЂР°РЅРЅС‹Р№ РїРѕСЂС‚
 			settings->Values["COMPort"] = ComboBox1->Text;
 
-			// Сохраняем в файл
+			// РЎРѕС…СЂР°РЅСЏРµРј РІ С„Р°Р№Р»
 			settings->SaveToFile("ComPort.ini");
 		}
 		__finally
@@ -460,7 +519,47 @@ void __fastcall TForm1::ComboBox1Change(TObject *Sender)
 void __fastcall TForm1::TrackBar2Change(TObject *Sender)
 {
 	Label2->Caption = TrackBar2->Position;
+	Bright =  abs(TrackBar2->Position);
+	Label1->Caption = "MODE:"+mode+",COLOR:"+color+",BRIGHT:"+Bright;
 
+}
+//---------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+void __fastcall TForm1::N1Click(TObject *Sender)
+{
+      Application->Terminate();
+}
+//---------------------------------------------------------------------------
+
+
+void __fastcall TForm1::FormClose(TObject *Sender, TCloseAction &Action)
+{
+    Action = caNone;              // РћС‚РјРµРЅСЏРµРј Р·Р°РєСЂС‹С‚РёРµ
+    this->Hide();                 // РЎРєСЂС‹РІР°РµРј РѕРєРЅРѕ
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TForm1::CTrayIcon1Click(TObject *Sender)
+{
+	this->Show();
+}
+//---------------------------------------------------------------------------
+
+
+
+void __fastcall TForm1::Timer1Timer(TObject *Sender)
+{
+		this->Hide();                  // РЎРєСЂС‹РІР°РµРј РіР»Р°РІРЅРѕРµ РѕРєРЅРѕ
+        Timer1->Enabled = false;
 }
 //---------------------------------------------------------------------------
 

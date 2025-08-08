@@ -13,6 +13,10 @@
 #include <System.ImageList.hpp>
 #include <Vcl.ImgList.hpp>
 #include <Vcl.Imaging.jpeg.hpp>
+#include <Windows.h>
+#include "trayicon.h"
+#include <Vcl.Menus.hpp>
+#include <Vcl.Imaging.pngimage.hpp> // ƒÎˇ ‡·ÓÚ˚ Ò Windows API
 //---------------------------------------------------------------------------
 class TForm1 : public TForm
 {
@@ -29,6 +33,12 @@ __published:	// IDE-managed Components
 	TComboBox *ComboBox1;
 	TTrackBar *TrackBar2;
 	TLabel *Label2;
+	TMemo *Memo1;
+	TPopupMenu *PopupMenu1;
+	TMenuItem *N1;
+	TCTrayIcon *CTrayIcon1;
+	TImage *Image2;
+	TTimer *Timer1;
 	void __fastcall Button1Click(TObject *Sender);
 	void __fastcall ColorListBox1Click(TObject *Sender);
 	void __fastcall TrackBar1Change(TObject *Sender);
@@ -38,7 +48,12 @@ __published:	// IDE-managed Components
 	void __fastcall FormCreate(TObject *Sender);
 	void __fastcall ComboBox1Change(TObject *Sender);
 	void __fastcall TrackBar2Change(TObject *Sender);
+	void __fastcall N1Click(TObject *Sender);
+	void __fastcall FormClose(TObject *Sender, TCloseAction &Action);
+	void __fastcall CTrayIcon1Click(TObject *Sender);
+	void __fastcall Timer1Timer(TObject *Sender);
 private:	// User declarations
+	void __fastcall OnApplicationMessage(TMsg &Msg, bool &Handled);  // Œ¡⁄ﬂ¬À≈Õ»≈ ‘”Õ ÷»»
 public:		// User declarations
 	__fastcall TForm1(TComponent* Owner);
 };
